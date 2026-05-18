@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Analytics Portal — Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700&family=Instrument+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #080a0e;
+      --surface:  #0f1118;
+      --border:   #1c1f2e;
+      --accent:   #3b82f6;
+      --accent-g: #6366f1;
+      --text:     #dde1f0;
+      --muted:    #585e7a;
+      --danger:   #f87171;
+      --success:  #34d399;
+      --nav-h:    58px;
+    }
+
+    html, body {
+      height: 100%; background: var(--bg); color: var(--text);
+      font-family: 'Instrument Sans', sans-serif; font-weight: 300;
+    }
+
+    /* ── Auth guard overlay ── */
+    #authGuard {
+      position: fixed; inset: 0; z-index: 9999; background: var(--bg);
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
+    }
+    .guard-ring {
+      width: 40px; height: 40px; border-radius: 50%;
+      border: 2px solid var(--border); border-top-color: var(--accent);
+      animation: spin 0.7s linear infinite;
+    }
+    .guard-text { font-size: 0.8rem; color: var(--muted); }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Topbar ── */
+    .topbar {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      height: var(--nav-h);
+      background: var(--surface); border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 22px;
+    }
+
+    .topbar-left { display: flex; align-items: center; gap: 11px; }
+    .logo-mark {
+      width: 30px; height: 30px; border-radius: 7px; flex-shrink: 0;
+      background: linear-gradient(135deg, var(--accent), var(--accent-g));
+      display: flex; align-items: center; justify-content: center;
+    }
+    .logo-mark svg { width: 16px; height: 16px; fill: #fff; }
+    .logo-name {
+      font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.95rem;
+    }
+
+    .topbar-right { display: flex; align-items: center; gap: 12px; }
+
+    .live-pill {
+      display: flex; align-items: center; gap: 6px; padding: 4px 11px;
+      background: rgba(52,211,153,0.08); border: 1px solid rgba(52,211,153,0.2);
+      border-radius: 99px; font-size: 0.7rem; font-weight: 500;
+      text-transform: uppercase; letter-spacing: 0.08em; color: var(--success);
+    }
+    .live-dot {
+      width: 6px; height: 6px; border-radius: 50%; background: var(--success);
+      animation: blink 2s ease-in-out infinite;
+    }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+    .user-chip {
+      display: flex; align-items: center; gap: 8px; padding: 5px 13px 5px 6px;
+      background: var(--bg); border: 1px solid var(--border); border-radius: 99px;
+    }
+    .avatar {
+      width: 26px; height: 26px; border-radius: 50%; flex-shrink: 0;
+      background: linear-gradient(135deg, var(--accent), var(--accent-g));
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Syne', sans-serif; font-size: 0.68rem; font-weight: 700; color: #fff;
+    }
+    .username-label { font-size: 0.8rem; color: var(--muted); }
+
+    .btn-icon {
+      background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+      padding: 7px 12px; cursor: pointer; color: var(--muted);
+      font-family: 'Instrument Sans', sans-serif; font-size: 0.78rem;
+      display: flex; align-items: center; gap: 6px; transition: all 0.18s;
+    }
+    .btn-icon svg { width: 13px; height: 13px; fill: currentColor; flex-shrink: 0; }
+    .btn-icon:hover { border-color: var(--accent); color: var(--accent); }
+
+    .btn-logout {
+      background: rgba(248,113,113,0.07); border: 1px solid rgba(248,113,113,0.2);
+      border-radius: 8px; padding: 7px 14px; cursor: pointer; color: var(--danger);
+      font-family: 'Instrument Sans', sans-serif; font-size: 0.78rem; font-weight: 500;
+      transition: background 0.18s;
+    }
+    .btn-logout:hover { background: rgba(248,113,113,0.16); }
+
+    /* ── Main layout ── */
+    .main {
+      padding-top: var(--nav-h);
+      height: 100vh; display: flex; flex-direction: column;
+    }
+
+    .infobar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 9px 22px; border-bottom: 1px solid var(--border);
+      background: var(--bg); flex-shrink: 0;
+    }
+    .infobar-left { font-size: 0.78rem; color: var(--muted); }
+    .infobar-left strong { color: var(--text); font-weight: 500; }
+    .refresh-time { font-size: 0.72rem; color: var(--muted); }
+
+    /* ── iframe area ── */
+    .frame-wrap {
+      flex: 1; position: relative; overflow: hidden;
+    }
+    .frame-skeleton {
+      position: absolute; inset: 0; z-index: 10; background: var(--bg);
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
+      transition: opacity 0.4s;
+    }
+    .frame-skeleton .sk-ring {
+      width: 30px; height: 30px; border-radius: 50%;
+      border: 2px solid var(--border); border-top-color: var(--accent);
+      animation: spin 0.7s linear infinite;
+    }
+    .frame-skeleton span { font-size: 0.78rem; color: var(--muted); }
+
+    #dashFrame {
+      width: 100%; height: 100%; border: none; display: block;
+    }
+
+    /* ── Toast ── */
+    .toast {
+      position: fixed; bottom: 22px; right: 22px; z-index: 300;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 10px; padding: 11px 16px;
+      font-size: 0.8rem; color: var(--text);
+      display: none; align-items: center; gap: 8px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.45);
+    }
+    .toast.show { display: flex; animation: toastUp 0.3s ease; }
+    @keyframes toastUp { from{opacity:0;transform:translateY(10px)} }
+
+    @media (max-width: 580px) {
+      .live-pill, .btn-icon { display: none; }
+      .topbar { padding: 0 14px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Auth guard: shown while verifying session -->
+<div id="authGuard">
+  <div class="guard-ring"></div>
+  <div class="guard-text">Verifying session…</div>
+</div>
+
+<nav class="topbar">
+  <div class="topbar-left">
+    <div class="logo-mark">
+      <svg viewBox="0 0 24 24"><path d="M3 3h7v7H3zm0 11h7v7H3zm11-11h7v7h-7zm4 11v3h3v-3zm-4 0h3v3h-3zm4 4v3h3v-3z"/></svg>
+    </div>
+    <span class="logo-name">Analytics Portal</span>
+  </div>
+  <div class="topbar-right">
+    <div class="live-pill"><div class="live-dot"></div>Live</div>
+    <button class="btn-icon" onclick="refreshDashboard()">
+      <svg viewBox="0 0 24 24"><path d="M17.65 6.35A7.96 7.96 0 0012 4a8 8 0 100 16c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0112 18a6 6 0 010-12c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+      Refresh
+    </button>
+    <div class="user-chip">
+      <div class="avatar" id="userAvatar">—</div>
+      <span class="username-label" id="usernameLabel">—</span>
+    </div>
+    <button class="btn-logout" onclick="handleLogout()">Sign out</button>
+  </div>
+</nav>
+
+<div class="main">
+  <div class="infobar">
+    <div class="infobar-left">Dashboard: <strong>Analytics Overview</strong></div>
+    <div class="refresh-time">Refreshed at <span id="refreshAt">—</span></div>
+  </div>
+
+  <div class="frame-wrap">
+    <div class="frame-skeleton" id="skeleton">
+      <div class="sk-ring"></div>
+      <span>Loading dashboard…</span>
+    </div>
+    <!--
+      Replace src with your Looker Studio embed URL:
+      https://lookerstudio.google.com/embed/reporting/YOUR_REPORT_ID/page/PAGE_ID
+    -->
+    <iframe
+      id="dashFrame"
+      src="https://datastudio.google.com/embed/reporting/8f105d19-95ea-4b34-b4b2-d88009ca278a/page/LC0pF"
+      allowfullscreen
+      sandbox="allow-storage-access-by-user-activation allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-forms"
+      referrerpolicy="strict-origin-when-cross-origin"
+      onload="onFrameLoad()"
+    ></iframe>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  // ────────────────────────────────────────────────────────────────
+  //  AUTH GUARD — verify session token with Netlify Function
+  // ────────────────────────────────────────────────────────────────
+  (async function checkAuth() {
+    const token = sessionStorage.getItem('auth_token');
+
+    if (!token) {
+      window.location.replace('/');
+      return;
+    }
+
+    try {
+      const res  = await fetch('/.netlify/functions/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token })
+      });
+      const data = await res.json();
+
+      if (!res.ok || !data.ok) {
+        sessionStorage.removeItem('auth_token');
+        window.location.replace('/');
+        return;
+      }
+
+      // Session valid — reveal page
+      document.getElementById('authGuard').style.display = 'none';
+      document.getElementById('usernameLabel').textContent = data.username || 'user';
+      document.getElementById('userAvatar').textContent =
+        (data.username || 'U').slice(0, 2).toUpperCase();
+      updateTime();
+
+    } catch {
+      window.location.replace('/');
+    }
+  })();
+
+  // ────────────────────────────────────────────────────────────────
+  //  IFRAME LOAD
+  // ────────────────────────────────────────────────────────────────
+  function onFrameLoad() {
+    const sk = document.getElementById('skeleton');
+    sk.style.opacity = '0';
+    setTimeout(() => sk.style.display = 'none', 400);
+  }
+
+  // ────────────────────────────────────────────────────────────────
+  //  REFRESH — force Looker Studio to re-query BigQuery
+  // ────────────────────────────────────────────────────────────────
+  function refreshDashboard() {
+    const frame = document.getElementById('dashFrame');
+    const sk    = document.getElementById('skeleton');
+    sk.style.display = 'flex'; sk.style.opacity = '1';
+    const src = frame.src; frame.src = ''; setTimeout(() => { frame.src = src; }, 80);
+    updateTime(); showToast('Dashboard refreshing…');
+  }
+
+  function updateTime() {
+    document.getElementById('refreshAt').textContent =
+      new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  }
+
+  // ────────────────────────────────────────────────────────────────
+  //  LOGOUT
+  // ────────────────────────────────────────────────────────────────
+  function handleLogout() {
+    sessionStorage.removeItem('auth_token');
+    window.location.replace('/');
+  }
+
+  // ────────────────────────────────────────────────────────────────
+  //  TOAST
+  // ────────────────────────────────────────────────────────────────
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2800);
+  }
+</script>
+</body>
+</html>

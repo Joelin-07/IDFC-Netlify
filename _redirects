@@ -1,0 +1,19 @@
+# ============================================================
+#  Netlify _redirects
+# ============================================================
+
+# Protect dashboard — unauthenticated requests redirect to login.
+# The JS auth guard inside dashboard.html is the primary check;
+# this is the network-level fallback.
+/dashboard.html   /dashboard.html   200
+/dashboard        /dashboard.html   301
+
+# API functions (already routed by Netlify automatically,
+# listed here for clarity)
+/.netlify/functions/*   /.netlify/functions/:splat   200
+
+# Root
+/   /index.html   200
+
+# Catch-all → login
+/*  /index.html   302

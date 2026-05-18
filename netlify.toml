@@ -1,0 +1,27 @@
+[build]
+  publish   = "."
+  command   = ""
+  functions = "netlify/functions"
+
+# ── Security headers ─────────────────────────────────────────────
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options             = "SAMEORIGIN"
+    X-Content-Type-Options      = "nosniff"
+    X-XSS-Protection            = "1; mode=block"
+    Referrer-Policy             = "strict-origin-when-cross-origin"
+    Permissions-Policy          = "camera=(), microphone=(), geolocation=()"
+    Content-Security-Policy     = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' https://fonts.googleapis.com 'unsafe-inline'; font-src https://fonts.gstatic.com; frame-src https://lookerstudio.google.com https://datastudio.google.com; connect-src 'self' https://*.netlify.app https://*.netlify.com; img-src 'self' data: https:;"
+
+# Never cache HTML — always fetch fresh so auth redirects work
+[[headers]]
+  for = "/*.html"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
+
+# Never cache function responses
+[[headers]]
+  for = "/.netlify/functions/*"
+  [headers.values]
+    Cache-Control = "no-store"
